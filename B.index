@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>🧩 謎解きアシスタント</title>
+    <base target="_top">
+    <style>
+      body {
+        font-family: 'Arial', sans-serif;
+        background: #f9f9f9;
+        padding: 10px;
+      }
+      #chatBox {
+        background: #fff;
+        border-radius: 10px;
+        padding: 10px;
+        height: 400px;
+        overflow-y: auto;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      }
+      .message {
+        max-width: 80%;
+        margin: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        animation: fadeIn 0.3s ease-in-out;
+        display: inline-block;
+        word-break: break-word;
+      }
+      .user {
+        background: #d1e7ff;
+        align-self: flex-end;
+        text-align: right;
+        margin-left: auto;
+      }
+      .bot {
+        background: #e9ecef;
+        align-self: flex-start;
+        text-align: left;
+        margin-right: auto;
+      }
+      #chatContainer {
+        display: flex;
+        flex-direction: column;
+      }
+      #inputArea {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+      }
+      #userInput {
+        flex-grow: 1;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #007bff;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+  </head>
+  <body>
+    <h2>🧩 謎解きアシスタント</h2>
+    <div id="chatBox">
+      <div id="chatContainer"></div>
+    </div>
+    <div id="inputArea">
+      <input type="text" id="userInput" placeholder="ヒントやキーワードを入力..." onkeydown="checkEnter(event)" />
+      <button onclick="sendMessage()">送信</button>
+    </div>
+
+    <script>
+const responses = [
+  { keyword: ["謎解き開始"], response: "君たちが通うこの学園で、最近、教員たちの様子がおかしい。\nいつもは穏やかで優しい先生たちが、どこか秘密めいた表情を浮かべ、言動もどこか違う。\n何かが、確かに変わっている。\n\n「このままでは何かが壊れてしまう──」\n誰かの声が、君たちの胸に響いた。\n\n教員の異変の謎を解き明かし、学園に平和を取り戻すのは君たちの役目だ。\nすべての教科に隠された手がかりを見つけ出し、真実へと辿り着け。\n\n救いたい教科名を下から1つずつ選んで、メッセージで送ってほしい。\n国語　数学　理科　英語　社会　情報　家庭　体育　美術\n\nそれぞれの答えの後に表示される手がかりを並べ替え、真実へ辿り着こう。" },
+  { keyword: ["国語"], response: " ある「西」「米」「墨」  ない「東」「パン」「白」\nあるに含まれるものに共通することとはなんでしょうか？\n漢字1文字で答えてください。\nヒントが欲しい場合、「ハート」と入力してね。" },
+  { keyword: ["ハート"], response: "あるの例には他に「中」がありますね！" },
+  { keyword: ["国"], response: "正解です！あるに含まれているものは国名を表していましたね！\n「西」は「スペイン」、「米」は「アメリカ」、「墨」は「メキシコ」を表しています！\n今回の手がかりは「シ」です。" },
+  { keyword: ["数学"], response: "H + A + T = 29\nC + A + T = 24\nD + O + G = ？　\nヒントが欲しい場合、「わっしょい」と入力してね。" },
+  { keyword: ["わっしょい"], response: "1文字で考えると...？" },
+  { keyword: ["Z"], response: "よくできました！「Z」が正解です！\nアルファベットの順番に着目するのがポイントでしたね！\n26という回答が出たと思うのですが、それをさらに変換していただくことで正解です！\n今回の手がかりは「ケ」です。" },
+  { keyword: ["英語"], response: "英語と数学が好きな先生がボソッと\n「integral」（積分）と喋った。\nその後、同じアルファベットの組み合わせで別の英単語を\n喋ったようなのだが、なんという英単語だろうか？\nヒントが欲しい場合、「アナグラム」と入力してね。" },
+  { keyword: ["アナグラム"], response: "別の数学の言葉になるよ！" },
+  { keyword: ["triangle"], response: "よくできました！\n「triangle」が正解です！\n数学の用語を並べ替えるとまた数学の言葉になるのが面白いですよね！\n今回の手がかりは「ン」です。" },
+  { keyword: ["社会"], response: "40.7128, -74.0060\nそこでは女神が微笑んでいるという。\n何を表しているか突き止めよ。\nヒントが欲しい場合、「ゴージャス」と入力してね。" },
+  { keyword: ["ゴージャス"], response: "地球をイメージしてもらうといいかも!?" },
+  { keyword: ["自由の女神"], response: "正解です！\nあの数字は緯度経度を表していました！\n自由の女神がある場所を緯度経度で表すとあの数字になっています！\n今回の手がかりは「ー」です。" },
+  { keyword: ["情報"], response: "ある日のこと、パソコンを開きメールを確認していると奇妙なメッセージが届いていた。\n\n＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝\n\nはじめまして。\nこのメッセージを解読できた人は、素敵なコトを知ることができるよ。\n\n\n\n　　　　XHOQ4YKXHOFG;E\n\n\n\n\n＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝\n\nスルーしようかとも思ったが、この文字列にどんな内容が隠されているのか気になった。\nこの奇妙な暗号を解読してみよう。\nヒントが欲しい場合、「PC」と入力してね。" },
+  { keyword: ["PC"], response: "パソコンのキーボードが、ふと気になった。" },
+  { keyword: ["さくらたうんのさくらはきれい"], response: "\n　　さくらタウンのさくらはキレイ\n\nお見事！\n\n「XHOQ4YKXHOFG;E」\n\nこのメッセージは、キーボードのかな入力に当てはめると、解読することができます！\n\nこの地域周辺はさくらタウンと呼ばれているのもあり、桜が満開に咲く季節のキャンパスを背景にするような展開です！\n\n解読した手がかりは「メ」となります。" },
+  { keyword: ["体育"], response: "なぞなぞ：車のタイヤの数と人間の手足の数を足すと何になるでしょうか？\nヒントが欲しい場合、「パワー」と入力してね。" },
+  { keyword: ["パワー"], response: "ヒントとしては、解けると思います！" },
+  { keyword: ["6"], response: "正解です！\n車は4つ、そして人間は手と足合わせて4本のため、合わせて6ですね！\n今回の手がかりは「エ」です。" },
+  { keyword: ["美術"], response: "ある芸術家が絵を描き始めた。\n筆の一筆目は「黒」で、二筆目は「青」、三筆目は「白」\nその後、色の意味を説明してくれた。\n「黒は闇を表す」「青は水を表す」「白は何を表すだろうか？」\nヒントが欲しい場合、「画材」と入力してね。" },
+  { keyword: ["画材"], response: "白の画材でよく使う色は...？" },
+  { keyword: ["白"], response: "正解です！\n白は「光」を表していました！\n今回の手がかりは「ツ」です。" },
+];
+
+function sendMessage() {
+  const userInput = document.getElementById('userInput').value.trim();
+  const chatContainer = document.getElementById('chatContainer');
+  
+  // ユーザーのメッセージを追加
+  const userMessage = document.createElement('div');
+  userMessage.classList.add('message', 'user');
+  userMessage.innerHTML = userInput.replace(/\n/g, '<br>'); // 改行を <br> に変換
+  chatContainer.appendChild(userMessage);
+  
+  document.getElementById('userInput').value = '';
+
+  // ボットのレスポンスを1秒後に追加
+  setTimeout(() => {
+    const botMessage = document.createElement('div');
+    botMessage.classList.add('message', 'bot');
+    const response = getResponse(userInput);
+    botMessage.innerHTML = response.replace(/\n/g, '<br>'); // 改行を <br> に変換
+    chatContainer.appendChild(botMessage);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }, 1000); // 1秒後にボットのレスポンスを表示
+}
+
+function getResponse(input) {
+  for (let i = 0; i < responses.length; i++) {
+    if (input.match(responses[i].keyword.join('|'))) {
+      return responses[i].response;
+    }
+  }
+      return "入力されたメッセージが間違っているかもしれません！<br><br>もう一度やり直してみてください。<br>ヒントが欲しい場合、キーワードは問題文に書かれています。";
+}
+
+function checkEnter(event) {
+  if (event.key === 'Enter') {
+    sendMessage();
+  }
+}
+    </script>
+  </body>
+</html>
