@@ -114,34 +114,34 @@ const responses = [
 
 function sendMessage() {
   const userInput = document.getElementById('userInput').value.trim();
+  if (!userInput) return; // 空欄なら何もしない
+
   const chatContainer = document.getElementById('chatContainer');
   
-  // ユーザーのメッセージを追加
   const userMessage = document.createElement('div');
   userMessage.classList.add('message', 'user');
-  userMessage.innerHTML = userInput.replace(/\n/g, '<br>'); // 改行を <br> に変換
+  userMessage.innerHTML = userInput.replace(/\n/g, '<br>');
   chatContainer.appendChild(userMessage);
-  
+
   document.getElementById('userInput').value = '';
 
-  // ボットのレスポンスを1秒後に追加
   setTimeout(() => {
     const botMessage = document.createElement('div');
     botMessage.classList.add('message', 'bot');
     const response = getResponse(userInput);
-    botMessage.innerHTML = response.replace(/\n/g, '<br>'); // 改行を <br> に変換
+    botMessage.innerHTML = response.replace(/\n/g, '<br>');
     chatContainer.appendChild(botMessage);
     chatContainer.scrollTop = chatContainer.scrollHeight;
-  }, 1000); // 1秒後にボットのレスポンスを表示
+  }, 1000);
 }
 
 function getResponse(input) {
   for (let i = 0; i < responses.length; i++) {
-    if (input.match(responses[i].keyword.join('|'))) {
+    if (responses[i].keyword.includes(input)) {
       return responses[i].response;
     }
   }
-      return "入力されたメッセージが間違っているかもしれません！<br><br>もう一度やり直してみてください。<br>ヒントが欲しい場合、キーワードは問題文に書かれています。";
+  return "入力されたメッセージが間違っているかもしれません！<br><br>もう一度やり直してみてください。<br>ヒントが欲しい場合、キーワードは問題文に書かれています。";
 }
 
 function checkEnter(event) {
